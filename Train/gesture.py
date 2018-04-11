@@ -60,16 +60,17 @@ train = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.argmax(y_, axis=1), tf.argmax(y, axis=1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-mini_after_dequeue = 1000
-
 # 组合batch
-train_batch=64
+train_batch = 64
 test_batch = 32
-train_capacity = mini_after_dequeue + 3 * train_batch
-test_capacity = mini_after_dequeue + 3 * test_batch
 
-min_after_dequeue_train=1000
-min_after_dequeue_test=100
+min_after_dequeue_train = train_batch * 2
+min_after_dequeue_test = test_batch * 2
+
+num_threads = 3
+
+train_capacity = min_after_dequeue_train + num_threads * train_batch
+test_capacity = min_after_dequeue_test + num_threads * test_batch
 
 Training_iterations = 10000
 Validation_size = 100
@@ -83,9 +84,9 @@ display_step = 100
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     for step in range(Training_iterations + 1):
-        batch_train = tf.train.shuffle_batch([x_train, y_train], batch_size=train_batch,
-                                     capacity=train_capacity,min_after_dequeue=min_after_dequeue_train)
-        batch_train=sess.run(batch_train)
+        batch_train = tf.train.shuffle_batch([x_train, y_train], batch_size=train_batch,num_threads=num_threads,
+                                             capacity=train_capacity, min_after_dequeue=min_after_dequeue_train)
+        batch_train = sess.run(batch_train)
 
         sess.run(train, feed_dict={x: batch_train[0], y_: batch_train[1]})
         # Train accuracy
@@ -94,7 +95,10 @@ with tf.Session() as sess:
                   sess.run(accuracy, feed_dict={x: batch_train[0], y_: batch_train[1]}))
 
     for step in range(Test_iterations + 1):
-        batch_x_test, batch_y_test = tf.train.shuffle_batch([x_train, y_train], batch_size=test_batch, capacity=test_capacity,min_after_dequeue=min_after_dequeue_test)
+        batch_x_test, batch_y_test = tf.train.shuffle_batch([x_train, y_train], batch_size=test_batch,
+                                                            num_threads=num_threads,
+                                                            capacity=test_capacity,
+                                                            min_after_dequeue=min_after_dequeue_test)
 
         print('Test Accuracy', step,
               sess.run(accuracy, feed_dict={x: batch_x_test, y_: batch_y_test}))
