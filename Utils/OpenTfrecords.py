@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 reader = tf.TFRecordReader()
-filename_queue = tf.train.string_input_producer(["train.tfrecords"])
+filename_queue = tf.train.string_input_producer(["/home/dmrf/tensorflow_gesture_data/Gesture_data/abc_mic_train_5.tfrecords"])
 _, serialized_example = reader.read(filename_queue)
 
 # 解析读取的样例。

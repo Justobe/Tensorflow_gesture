@@ -6,8 +6,8 @@ from Utils.ReadAndDecode import read_and_decode
 
 from Net.CNN_Init import weight_variable, bias_variable, conv2d, max_pool_2x2
 
-train_path = '/home/tensorflow_gesture_data/abc_mic_train_5.tfrecords'
-val_path = '/home/tensorflow_gesture_data/abc_mic_val_5.tfrecords'
+train_path = '/home/dmrf/tensorflow_gesture_data/Gesture_data/abc_mic_train_5.tfrecords'
+val_path = '/home/dmrf/tensorflow_gesture_data/Gesture_data/abc_mic_train_5.tfrecords'
 x_train, y_train = read_and_decode(train_path)
 x_val, y_val = read_and_decode(val_path)
 
@@ -80,25 +80,31 @@ Test_iterations = test_count / test_batch
 
 display_step = 100
 
+# 使用shuffle_batch可以随机打乱输入
+train_x_batch, train_y_batch = tf.train.shuffle_batch([x_train, y_train],
+                                                      batch_size=train_batch, capacity=train_capacity,
+                                                      min_after_dequeue=min_after_dequeue_train)
+
+# 使用shuffle_batch可以随机打乱输入
+test_x_batch, test_y_batch = tf.train.shuffle_batch([x_val, y_val],
+                                                    batch_size=test_batch, capacity=test_capacity,
+                                                    min_after_dequeue=min_after_dequeue_test)
+
 # Train
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
-    for step in range(Training_iterations + 1):
-        batch_train = tf.train.shuffle_batch([x_train, y_train], batch_size=train_batch,num_threads=num_threads,
-                                             capacity=train_capacity, min_after_dequeue=min_after_dequeue_train)
-        batch_train = sess.run(batch_train)
+    threads = tf.train.start_queue_runners(sess=sess)
 
-        sess.run(train, feed_dict={x: batch_train[0], y_: batch_train[1]})
+    for step in range(Training_iterations + 1):
+        train_x, train_y = sess.run([train_x_batch, train_y_batch])
+
+        sess.run(train, feed_dict={x: train_x, y_: train_y})
         # Train accuracy
         if step % Validation_size == 0:
             print('Training Accuracy', step,
-                  sess.run(accuracy, feed_dict={x: batch_train[0], y_: batch_train[1]}))
+                  sess.run(accuracy, feed_dict={x: train, y_: train_y}))
 
     for step in range(Test_iterations + 1):
-        batch_x_test, batch_y_test = tf.train.shuffle_batch([x_train, y_train], batch_size=test_batch,
-                                                            num_threads=num_threads,
-                                                            capacity=test_capacity,
-                                                            min_after_dequeue=min_after_dequeue_test)
-
+        test_x, test_y = sess.run([test_x_batch, test_y_batch])
         print('Test Accuracy', step,
-              sess.run(accuracy, feed_dict={x: batch_x_test, y_: batch_y_test}))
+              sess.run(accuracy, feed_dict={x: test_x, y_: test_y}))
