@@ -6,6 +6,7 @@ from Utils.ReadAndDecode import read_and_decode
 
 from Net.CNN_Init import weight_variable, bias_variable, conv2d, max_pool_2x2
 
+log_path = '/home/dmrf/tensorflow_gesture_data/Log'
 train_path = '/home/dmrf/tensorflow_gesture_data/Gesture_data/abc_mic_train_5.tfrecords'
 val_path = '/home/dmrf/tensorflow_gesture_data/Gesture_data/abc_mic_train_5.tfrecords'
 x_train, y_train = read_and_decode(train_path)
@@ -54,15 +55,13 @@ h_fc2 = tf.nn.relu(tf.matmul(h_fc1, w_fc2) + b_fc2)
 y = tf.nn.softmax(h_fc2)
 
 # Loss
-#cross_entropy = -tf.reduce_sum(y_label * tf.log(y))
-cross_entropy = tf.losses.sparse_softmax_cross_entropy(labels=y_label,logits=y)
-train = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
+base_lr = 0.001
+cross_entropy = tf.losses.sparse_softmax_cross_entropy(labels=y_label, logits=y)
+# train = tf.train.AdamOptimizer(base_lr).minimize(cross_entropy)
+Optimizer = tf.train.GradientDescentOptimizer(learning_rate=base_lr)
+train = Optimizer.minimize(cross_entropy)
 
-# a=tf.argmax(y_label, axis=1)
-# b= tf.argmax(y, axis=1)
-# # Prediction
-# correct_prediction = tf.equal(a,b)
 correct_prediction = tf.equal(tf.argmax(y, 1), y_label)
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
@@ -78,7 +77,7 @@ num_threads = 3
 train_capacity = min_after_dequeue_train + num_threads * train_batch
 test_capacity = min_after_dequeue_test + num_threads * test_batch
 
-Training_iterations = 10000
+Training_iterations = 3000
 Validation_size = 100
 
 test_count = labels_type * 100
@@ -100,17 +99,26 @@ test_x_batch, test_y_batch = tf.train.shuffle_batch([x_val, y_val],
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     threads = tf.train.start_queue_runners(sess=sess)
-
+    merged_summary_op = tf.summary.merge_all()
+    writer = tf.summary.FileWriter(log_path)
+    config = tf.contrib.tensorboard.plugins.projector.ProjectorConfig()
+    tf.contrib.tensorboard.plugins.projector.visualize_embeddings(writer, config)
+    writer.add_graph(sess.graph)
     for step in range(Training_iterations + 1):
         train_x, train_y = sess.run([train_x_batch, train_y_batch])
 
         sess.run(train, feed_dict={x: train_x, y_label: train_y})
         # Train accuracy
         if step % Validation_size == 0:
-            print('Training Accuracy', step,
-                  sess.run(accuracy, feed_dict={x: train_x, y_label: train_y}))
+            summary_str = sess.run(merged_summary_op)
+            writer.add_summary(summary_str, step)
+            a = sess.run(accuracy, feed_dict={x: train_x, y_label: train_y})
+            print('Training Accuracy', step, a
+                  )
+            writer.add_summary(a[1], step)
 
     for step in range(Test_iterations + 1):
         test_x, test_y = sess.run([test_x_batch, test_y_batch])
+        b = sess.run(accuracy, feed_dict={x: train_x, y_label: train_y})
         print('Test Accuracy', step,
-              sess.run(accuracy, feed_dict={x: test_x, y_label: test_y}))
+              b)
