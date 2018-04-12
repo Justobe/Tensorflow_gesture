@@ -57,13 +57,17 @@ w_fc2 = weight([1024, 10])
 b_fc1 = bias([10])
 y = tf.nn.softmax(tf.matmul(h_fc1,w_fc2)+b_fc1)
 
+
 # Loss
 cross_entropy = -tf.reduce_sum(y_label * tf.log(y))
+
+
 train = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
 # Prediction
 correct_prediction = tf.equal(tf.argmax(y_label, axis=1), tf.argmax(y, axis=1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
 
 # Train
 with tf.Session() as sess:

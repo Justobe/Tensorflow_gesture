@@ -8,7 +8,7 @@ import os
 
 # 生成整数型的属性
 def _int64_feature(value):
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
 
 
 # 生成字符串类型的属性
@@ -17,7 +17,7 @@ def _bytes_feature(value):
 
 
 # 制作TFRecord格式
-def test_write_to_tfrecords(filename, data_dir, data_count):
+def write_to_tfrecords(filename, data_dir, data_count):
     # 输出TFRecord文件的地址
 
     writer = tf.python_io.TFRecordWriter(filename)
@@ -74,8 +74,10 @@ def test_write_to_tfrecords(filename, data_dir, data_count):
             if ccount > data_count:
                 continue
 
+        labels=[0,0,0]
+        labels[index]=1
         example = tf.train.Example(features=tf.train.Features(feature={
-            'label': _int64_feature(index),
+            'label': _int64_feature(labels),
             'data_raw': _bytes_feature(data_raw)
         }))
         print('num:' + str(count)+'_'+str(index))
@@ -89,7 +91,7 @@ def test_write_to_tfrecords(filename, data_dir, data_count):
 
 
 if __name__ == '__main__':
-    tfrecords_filename = "abc_mic_val_5.tfrecords"
-    data_dir = '/home/dmrf/文档/Gesture/New_Data/Gesture_Data/abc_mic_test_5'
-    data_count = 480#2080#480
-    test_write_to_tfrecords(tfrecords_filename, data_dir, data_count)
+    tfrecords_filename = "abc_mic_train_5.tfrecords"
+    data_dir = '/home/dmrf/文档/Gesture/New_Data/Gesture_Data/abc_mic_train_5'
+    data_count = 2080#480
+    write_to_tfrecords(tfrecords_filename, data_dir, data_count)

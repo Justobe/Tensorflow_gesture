@@ -14,14 +14,14 @@ x_val, y_val = read_and_decode(val_path)
 w = 550
 h = 8
 c = 2
-labels_count = 3
+labels_type = 3
 Learning_rate = 0.01
 
 # 占位符
 
 # [batch, in_height, in_width, in_channels]
 x = tf.placeholder(tf.float32, shape=[None, h, w, c], name='x')
-y_ = tf.placeholder(tf.float32, shape=[None, ], name='y_')
+y_label = tf.placeholder(tf.int64, shape=[None, ], name='y_')
 
 # [filter_height, filter_width, in_channels, out_channels]
 w_conv1 = weight_variable([1, 7, 2, 16])
@@ -34,30 +34,36 @@ h_pool1 = max_pool_2x2(h_conv1, [1, 1, 2, 1],
 
 w_conv2 = weight_variable([1, 5, 16, 32])
 b_conv2 = bias_variable([32])
-h_conv2 = tf.nn.relu(conv2d(h_pool1, w_conv2, s=[1, 2, 1, 1]) + b_conv2)
-h_pool2 = max_pool_2x2(h_conv2, k=[1, 2, 1, 1], s=[1, 2, 1, 1])
+h_conv2 = tf.nn.relu(conv2d(h_pool1, w_conv2, s=[1, 1, 2, 1]) + b_conv2)
+h_pool2 = max_pool_2x2(h_conv2, k=[1, 1, 2, 1], s=[1, 1, 2, 1])
 
 w_conv3 = weight_variable([1, 4, 32, 64])
 b_conv3 = bias_variable([64])
-h_conv3 = tf.nn.relu(conv2d(h_pool2, w_conv3, [1, 2, 1, 1]) + b_conv3)
-h_pool3 = max_pool_2x2(h_conv2, [1, 2, 1, 1], [1, 2, 1, 1])
+h_conv3 = tf.nn.relu(conv2d(h_pool2, w_conv3, [1, 1, 2, 1]) + b_conv3)
+h_pool3 = max_pool_2x2(h_conv3, [1, 1, 2, 1], [1, 1, 2, 1])
 
-w_fc1 = weight_variable([8 * 46 * 64, 256])
+w_fc1 = weight_variable([8 * 6 * 64, 256])
 b_fc1 = bias_variable([256])
-h_pool3_flat = tf.reshape(h_pool3, [-1, 8 * 46 * 64])
+h_pool3_flat = tf.reshape(h_pool3, [-1, 8 * 6 * 64])
 h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, w_fc1) + b_fc1)
 
-w_fc2 = weight_variable([256, labels_count])
-b_fc2 = bias_variable([labels_count])
+w_fc2 = weight_variable([256, labels_type])
+b_fc2 = bias_variable([labels_type])
+h_fc2 = tf.nn.relu(tf.matmul(h_fc1, w_fc2) + b_fc2)
 
-y = tf.nn.softmax(tf.matmul(h_fc1, w_fc2) + b_fc2)
+y = tf.nn.softmax(h_fc2)
 
 # Loss
-cross_entropy = -tf.reduce_sum(y_ * tf.log(y))
+#cross_entropy = -tf.reduce_sum(y_label * tf.log(y))
+cross_entropy = tf.losses.sparse_softmax_cross_entropy(labels=y_label,logits=y)
 train = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
-# Prediction
-correct_prediction = tf.equal(tf.argmax(y_, axis=1), tf.argmax(y, axis=1))
+
+# a=tf.argmax(y_label, axis=1)
+# b= tf.argmax(y, axis=1)
+# # Prediction
+# correct_prediction = tf.equal(a,b)
+correct_prediction = tf.equal(tf.argmax(y, 1), y_label)
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 # 组合batch
@@ -75,7 +81,7 @@ test_capacity = min_after_dequeue_test + num_threads * test_batch
 Training_iterations = 10000
 Validation_size = 100
 
-test_count = labels_count * 100
+test_count = labels_type * 100
 Test_iterations = test_count / test_batch
 
 display_step = 100
@@ -98,13 +104,13 @@ with tf.Session() as sess:
     for step in range(Training_iterations + 1):
         train_x, train_y = sess.run([train_x_batch, train_y_batch])
 
-        sess.run(train, feed_dict={x: train_x, y_: train_y})
+        sess.run(train, feed_dict={x: train_x, y_label: train_y})
         # Train accuracy
         if step % Validation_size == 0:
             print('Training Accuracy', step,
-                  sess.run(accuracy, feed_dict={x: train, y_: train_y}))
+                  sess.run(accuracy, feed_dict={x: train_x, y_label: train_y}))
 
     for step in range(Test_iterations + 1):
         test_x, test_y = sess.run([test_x_batch, test_y_batch])
         print('Test Accuracy', step,
-              sess.run(accuracy, feed_dict={x: test_x, y_: test_y}))
+              sess.run(accuracy, feed_dict={x: test_x, y_label: test_y}))
