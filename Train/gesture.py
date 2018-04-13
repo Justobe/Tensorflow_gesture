@@ -2,7 +2,6 @@
 
 import tensorflow as tf
 
-from Utils.Adjust_learning_rate_inv import adjust_learning_rate_inv
 from Utils.ReadAndDecode import read_and_decode
 
 from Net.CNN_Init import weight_variable, bias_variable, conv2d, max_pool_2x2
@@ -18,10 +17,10 @@ h = 8
 c = 2
 labels_type = 3
 
-
 # 占位符
 
 # [batch, in_height, in_width, in_channels]
+
 x = tf.placeholder(tf.float32, shape=[None, h, w, c], name='x_in')
 y_label = tf.placeholder(tf.int64, shape=[None, ], name='y_in')
 
@@ -64,12 +63,7 @@ def add_net(in_x):
 y = add_net(x)
 base_lr = 0.01
 
-# cross_entropy = -tf.reduce_sum(y_label*tf.log(y))
-# do cross_entropy just one step
-# cross_entropy=tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y, labels=y_label))#dont forget tf.reduce_sum()!!
-
 cross_entropy = tf.losses.sparse_softmax_cross_entropy(labels=y_label, logits=y)
-# train = tf.train.AdamOptimizer(base_lr).minimize(cross_entropy)
 Optimizer = tf.train.GradientDescentOptimizer(learning_rate=base_lr)
 train = Optimizer.minimize(cross_entropy)
 
@@ -116,7 +110,7 @@ with tf.Session() as sess:
         sess.run(train, feed_dict={x: train_x, y_label: train_y})
         # Train accuracy
         if step % Validation_size == 0:
-            #base_lr = adjust_learning_rate_inv(step, base_lr)
+            # base_lr = adjust_learning_rate_inv(step, base_lr)
             a = sess.run(accuracy, feed_dict={x: train_x, y_label: train_y})
             print('Training Accuracy', step, a
                   )
