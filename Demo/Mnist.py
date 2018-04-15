@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
 mnist = input_data.read_data_sets('MNIST_data/', one_hot=True)
+log_dir='/home/dmrf/tensorflow_gesture_data/Log'
 
 # Variables
 batch_size = 100
@@ -29,9 +30,32 @@ def max_pool(input, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME'):
     return tf.nn.max_pool(input, ksize=ksize, strides=strides, padding=padding)
 
 # Initial
-x = tf.placeholder(tf.float32, shape=[None, 784])
-y_label = tf.placeholder(tf.float32, shape=[None, 10])
-x_reshape = tf.reshape(x, [-1, 28, 28, 1])
+with tf.name_scope('input'):
+    x = tf.placeholder(tf.float32, shape=[None, 784],name='x-input')
+    y_label = tf.placeholder(tf.float32, shape=[None, 10],name='y-input')
+
+with tf.name_scope('input_reshape'):
+    x_reshape = tf.reshape(x, [-1, 28, 28, 1])
+    tf.summary.image('input',x_reshape,10)
+
+def variable_summaries(var):
+    with tf.name_scope('summaries'):
+        # 计算参数的均值，并使用tf.summary.scaler记录
+        mean = tf.reduce_mean(var)
+        tf.summary.scalar('mean', mean)
+
+        # 计算参数的标准差
+        with tf.name_scope('stddev'):
+            stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+        # 使用tf.summary.scaler记录记录下标准差，最大值，最小值
+        tf.summary.scalar('stddev', stddev)
+        tf.summary.scalar('max', tf.reduce_max(var))
+        tf.summary.scalar('min', tf.reduce_min(var))
+        # 用直方图记录参数的分布
+        tf.summary.histogram('histogram', var)
+
+
+
 
 # Layer1
 w_conv1 = weight([5, 5, 1, 32])

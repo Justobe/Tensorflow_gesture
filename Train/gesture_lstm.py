@@ -7,15 +7,19 @@ from Utils.ReadAndDecode import read_and_decode
 from Net.CNN_Init import weight_variable, bias_variable, conv2d, max_pool_2x2
 
 log_path = '/home/dmrf/tensorflow_gesture_data/Log'
-train_path = '/home/dmrf/tensorflow_gesture_data/Gesture_data/abc_mic_train_5.tfrecords'
-val_path = '/home/dmrf/tensorflow_gesture_data/Gesture_data/abc_mic_train_5.tfrecords'
+train_path = '/home/dmrf/tensorflow_gesture_data/Gesture_data/mic_train_5ms.tfrecords'
+val_path = '/home/dmrf/tensorflow_gesture_data/Gesture_data/mic_train_5ms.tfrecords'
 x_train, y_train = read_and_decode(train_path)
 x_val, y_val = read_and_decode(val_path)
 
 w = 550
 h = 8
 c = 2
-labels_type = 3
+labels_type = 13
+
+
+n_steps = 550                # time steps
+n_hidden_units = 128        # neurons in hidden layer
 
 # 占位符
 
@@ -82,7 +86,7 @@ num_threads = 3
 train_capacity = min_after_dequeue_train + num_threads * train_batch
 test_capacity = min_after_dequeue_test + num_threads * test_batch
 
-Training_iterations = 3000
+Training_iterations = 15000
 Validation_size = 100
 
 test_count = labels_type * 100
