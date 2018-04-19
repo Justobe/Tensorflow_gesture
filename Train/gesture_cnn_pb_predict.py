@@ -27,7 +27,7 @@ Test_iterations = test_count / test_batch
 
 with tf.Graph().as_default():
     output_graph_def = tf.GraphDef()
-    output_graph_path = '../model/gesture_cnn.pb'
+    output_graph_path = 'gesture_cnn.pb'
 
     with open(output_graph_path, 'rb') as f:
         output_graph_def.ParseFromString(f.read())

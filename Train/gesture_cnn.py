@@ -11,7 +11,7 @@ from Net.CNN_Init import weight_variable, bias_variable, conv2d, max_pool_2x2
 
 log_path = '/home/dmrf/tensorflow_gesture_data/Log'
 train_path = '/home/dmrf/tensorflow_gesture_data/Gesture_data/mic_train_5ms.tfrecords'
-val_path = '/home/dmrf/tensorflow_gesture_data/Gesture_data/mic_train_5ms.tfrecords'
+val_path = '/home/dmrf/tensorflow_gesture_data/Gesture_data/mic_test_5ms.tfrecords'
 x_train, y_train = read_and_decode(train_path)
 x_val, y_val = read_and_decode(val_path)
 
@@ -23,9 +23,9 @@ labels_type = 13
 # 占位符
 
 # [batch, in_height, in_width, in_channels]
-with tf.name_scope('inputs'):
-    x = tf.placeholder(tf.float32, shape=[None, h, w, c], name='input')
-    y_label = tf.placeholder(tf.int64, shape=[None, ], name='output')
+x = tf.placeholder(tf.float32, shape=[None, h, w, c], name='input')
+y_label = tf.placeholder(tf.int64, shape=[None, ])
+
 
 
 def add_net(in_x):
@@ -58,12 +58,13 @@ def add_net(in_x):
     b_fc2 = bias_variable([labels_type])
     h_fc2 = tf.nn.relu(tf.matmul(h_fc1, w_fc2) + b_fc2)
 
-    out_y = tf.nn.softmax(h_fc2,name="output")
+    out_y = tf.nn.softmax(h_fc2)
     return out_y
 
 
 # Loss
 y = add_net(x)
+prediction_labels = tf.argmax(y, axis=1, name="output")
 with tf.name_scope('loss'):
     base_lr = 0.5
     tf.summary.scalar('loss', base_lr)
@@ -91,7 +92,7 @@ num_threads = 3
 train_capacity = min_after_dequeue_train + num_threads * train_batch
 test_capacity = min_after_dequeue_test + num_threads * test_batch
 
-Training_iterations = 3000
+Training_iterations = 1000
 Validation_size = 100
 
 test_count = labels_type * 100
