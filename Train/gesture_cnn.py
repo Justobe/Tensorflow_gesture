@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import tensorflow as tf
+import matplotlib as plt
+from sklearn.metrics import confusion_matrix
+import numpy as np
 
 from Utils.ReadAndDecode import read_and_decode
 
@@ -20,9 +23,9 @@ labels_type = 13
 # 占位符
 
 # [batch, in_height, in_width, in_channels]
-
-x = tf.placeholder(tf.float32, shape=[None, h, w, c], name='x_in')
-y_label = tf.placeholder(tf.int64, shape=[None, ], name='y_in')
+with tf.name_scope('inputs'):
+    x = tf.placeholder(tf.float32, shape=[None, h, w, c], name='input')
+    y_label = tf.placeholder(tf.int64, shape=[None, ], name='output')
 
 
 def add_net(in_x):
@@ -55,19 +58,25 @@ def add_net(in_x):
     b_fc2 = bias_variable([labels_type])
     h_fc2 = tf.nn.relu(tf.matmul(h_fc1, w_fc2) + b_fc2)
 
-    out_y = tf.nn.softmax(h_fc2)
+    out_y = tf.nn.softmax(h_fc2,name="output")
     return out_y
 
 
 # Loss
 y = add_net(x)
-base_lr = 0.5
+with tf.name_scope('loss'):
+    base_lr = 0.5
+    tf.summary.scalar('loss', base_lr)
 
-cross_entropy = tf.losses.sparse_softmax_cross_entropy(labels=y_label, logits=y)
-Optimizer = tf.train.GradientDescentOptimizer(learning_rate=base_lr)
-train = Optimizer.minimize(cross_entropy)
+with tf.name_scope('loss'):
+    cross_entropy = tf.losses.sparse_softmax_cross_entropy(labels=y_label, logits=y)
+    tf.summary.scalar('loss', cross_entropy)
+
+with tf.name_scope('train'):
+    train = tf.train.GradientDescentOptimizer(learning_rate=base_lr).minimize(cross_entropy)
 
 correct_prediction = tf.equal(tf.argmax(y, 1), y_label)
+
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 # 组合batch
@@ -82,7 +91,7 @@ num_threads = 3
 train_capacity = min_after_dequeue_train + num_threads * train_batch
 test_capacity = min_after_dequeue_test + num_threads * test_batch
 
-Training_iterations = 15000
+Training_iterations = 3000
 Validation_size = 100
 
 test_count = labels_type * 100
@@ -100,8 +109,43 @@ test_x_batch, test_y_batch = tf.train.shuffle_batch([x_val, y_val],
                                                     batch_size=test_batch, capacity=test_capacity,
                                                     min_after_dequeue=min_after_dequeue_test)
 
+
+def plot_confusion_matrix(cls_pred, cls_true):
+    # This is called from print_test_accuracy() below.
+
+    # cls_pred is an array of the predicted class-number for
+    # all images in the test-set.
+
+    # Get the true classifications for the test-set.
+
+    # Get the confusion matrix using sklearn.
+    cm = confusion_matrix(y_true=cls_true,
+                          y_pred=cls_pred)
+
+    # Print the confusion matrix as text.
+    print(cm)
+
+    # Plot the confusion matrix as an image.
+    plt.matshow(cm)
+
+    # Make various adjustments to the plot.
+    plt.colorbar()
+    tick_marks = np.arange(labels_type)
+    plt.xticks(tick_marks, range(labels_type))
+    plt.yticks(tick_marks, range(labels_type))
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+
+    # Ensure the plot is shown correctly with multiple plots
+    # in a single Notebook cell.
+    plt.show()
+
+
 # Train
 with tf.Session() as sess:
+    merged = tf.summary.merge_all()
+
+    writer = tf.summary.FileWriter("logs/", sess.graph)
     sess.run(tf.global_variables_initializer())
     threads = tf.train.start_queue_runners(sess=sess)
     for step in range(Training_iterations + 1):
@@ -114,9 +158,24 @@ with tf.Session() as sess:
             a = sess.run(accuracy, feed_dict={x: train_x, y_label: train_y})
             print('Training Accuracy', step, a
                   )
+            #    plot_confusion_matrix(correct_prediction,y_label)
+            result = sess.run(merged,
+                              feed_dict={x: train_x, y_label: train_y})
+            writer.add_summary(result, step)
+            # constant_graph = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def, ["output"])
+            # with tf.gfile.FastGFile('gesture_cnn.pb', mode='wb') as f:
+            #     f.write(constant_graph.SerializeToString())
 
     for step in range(Test_iterations + 1):
         test_x, test_y = sess.run([test_x_batch, test_y_batch])
-        b = sess.run(accuracy, feed_dict={x: train_x, y_label: train_y})
+        b = sess.run(accuracy, feed_dict={x: test_x, y_label: test_y})
         print('Test Accuracy', step,
               b)
+    # output_graph_def = tf.graph_until.convert_variables_to_constants(sess, sess.graph_def,
+    #                                                                  output_node_names=['output'])
+    # with tf.gfile.FastGFile('gesture_cnn.pb', mode = 'wb') as f:
+    #     f.write(output_graph_def.SerializeToString())
+    constant_graph = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def, ["output"])
+    with tf.gfile.FastGFile('gesture_cnn.pb', mode='wb') as f:
+        f.write(constant_graph.SerializeToString())
+
