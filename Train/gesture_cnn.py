@@ -58,7 +58,7 @@ def add_net(in_x):
     b_fc2 = bias_variable([labels_type])
     h_fc2 = tf.nn.relu(tf.matmul(h_fc1, w_fc2) + b_fc2)
 
-    out_y = tf.nn.softmax(h_fc2)
+    out_y = tf.nn.softmax(h_fc2,name='softmax')
     return out_y
 
 
@@ -92,7 +92,7 @@ num_threads = 3
 train_capacity = min_after_dequeue_train + num_threads * train_batch
 test_capacity = min_after_dequeue_test + num_threads * test_batch
 
-Training_iterations = 1000
+Training_iterations = 7500
 Validation_size = 100
 
 test_count = labels_type * 100
@@ -146,7 +146,7 @@ def plot_confusion_matrix(cls_pred, cls_true):
 with tf.Session() as sess:
     merged = tf.summary.merge_all()
 
-    writer = tf.summary.FileWriter("logs/", sess.graph)
+    writer = tf.summary.FileWriter("../Logs/", sess.graph)
     sess.run(tf.global_variables_initializer())
     threads = tf.train.start_queue_runners(sess=sess)
     for step in range(Training_iterations + 1):
@@ -177,6 +177,6 @@ with tf.Session() as sess:
     # with tf.gfile.FastGFile('gesture_cnn.pb', mode = 'wb') as f:
     #     f.write(output_graph_def.SerializeToString())
     constant_graph = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def, ["output"])
-    with tf.gfile.FastGFile('gesture_cnn.pb', mode='wb') as f:
+    with tf.gfile.FastGFile('../Model/gesture_cnn.pb', mode='wb') as f:
         f.write(constant_graph.SerializeToString())
 
