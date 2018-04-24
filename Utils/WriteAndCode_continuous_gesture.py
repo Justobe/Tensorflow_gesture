@@ -38,20 +38,32 @@ def write_to_tfrecords(filename, data_dir):
         I = I.reshape(-1, 1)
         Q = Q.reshape(-1, 1)
 
-        data = np.ndarray((8, 550, 2), dtype=np.float64)
-        if len(I) != 4400:
-            print 'error'
-            continue
-        if len(Q) != 4400:
-            print 'error'
-            continue
-        I = I.reshape(8, 550)
-        Q = Q.reshape(8, 550)
+        num_flag = 0
+        if len(I) > 8800:
+            num_flag = 1
 
-        for i in range(0, 8):
-            for j in range(0, 550):
-                data[i][j][0] = I[i][j]
-                data[i][j][1] = Q[i][j]
+        data = np.zeros(shape=(8, 2200, 2), dtype=np.float64)
+
+        try:
+            I = I.reshape(8, -1)
+            Q = Q.reshape(8, -1)
+        except ValueError:
+            continue
+
+
+        if num_flag == 0:  # len==1100
+            for i in range(0, 8):
+                for j in range(0, 1100):
+                    data[i][j][0] = I[i][j]
+                    data[i][j][1] = Q[i][j]
+                data[i][1100][0] = 2048
+                data[i][1100][1] = 2048
+        else:#len==2200
+            for i in range(0, 8):
+                for j in range(0, 2200):
+                    data[i][j][0] = I[i][j]
+                    data[i][j][1] = Q[i][j]
+
         data_raw = data.tostring()
         type = file[0]
         index = int(-1)
@@ -71,16 +83,6 @@ def write_to_tfrecords(filename, data_dir):
             index = int(6)
         if type == 'J':
             index = int(7)
-        if type == 'K':
-            index = int(8)
-        if type == 'L':
-            index = int(9)
-        if type == 'M':
-            index = int(10)
-        if type == 'N':
-            index = int(11)
-        if type == 'O':
-            index = int(12)
 
         if index == -1:
             print('label not found exception')
@@ -99,6 +101,6 @@ def write_to_tfrecords(filename, data_dir):
 
 
 if __name__ == '__main__':
-    tfrecords_filename = "mic_train_5ms.tfrecords"
-    data_dir = '/home/dmrf/文档/Gesture/New_Data/持续时间为1s的复杂手势/Train_5'
+    tfrecords_filename = "../Data/train.tfrecords"
+    data_dir = '/home/dmrf/文档/Gesture/New_Data/持续时间为1s的复杂手势/连续手势集/Train'
     write_to_tfrecords(tfrecords_filename, data_dir)
