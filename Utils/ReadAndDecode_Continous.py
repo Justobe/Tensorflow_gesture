@@ -16,7 +16,7 @@ def read_and_decode(filename):
                                        })
 
     img = tf.decode_raw(features['data_raw'], tf.float64)
-    img = tf.reshape(img, [8, 550, 2])
+    img = tf.reshape(img, [8, 2200, 2])
     label = tf.cast(features['label'], tf.int64)
 
     return img, label

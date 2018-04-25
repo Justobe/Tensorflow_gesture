@@ -3,7 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import tensorflow as tf
 import numpy as np
 import os
-from Utils.ReadAndDecode import read_and_decode
+from Utils.ReadAndDecode_Mic import read_and_decode
 import matplotlib.pyplot as plt
 
 val_path = '/home/dmrf/tensorflow_gesture_data/Gesture_data/mic_test_5ms.tfrecords'

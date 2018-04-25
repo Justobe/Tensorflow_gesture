@@ -1,7 +1,7 @@
 # -*-coding:utf-8-*-
 import tensorflow as tf
 
-from Utils.ReadAndDecode import read_and_decode
+from Utils.ReadAndDecode_Mic import read_and_decode
 
 if __name__ == "__main__":
     img, label = read_and_decode("/home/dmrf/tensorflow_gesture_data/Gesture_data/abc_mic_train_5.tfrecords")

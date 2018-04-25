@@ -5,7 +5,7 @@ import matplotlib as plt
 from sklearn.metrics import confusion_matrix
 import numpy as np
 
-from Utils.ReadAndDecode import read_and_decode
+from Utils.ReadAndDecode_Mic import read_and_decode
 
 from Net.CNN_Init import weight_variable, bias_variable, conv2d, max_pool_2x2
 
@@ -52,7 +52,8 @@ def add_net(in_x):
     w_fc1 = weight_variable([8 * 6 * 64, 256])
     b_fc1 = bias_variable([256])
     h_pool3_flat = tf.reshape(h_pool3, [-1, 8 * 6 * 64])
-    h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, w_fc1) + b_fc1)
+    h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, w_fc1) + b_fc1,name="fullconnection1")
+
 
     w_fc2 = weight_variable([256, labels_type])
     b_fc2 = bias_variable([labels_type])
@@ -91,8 +92,7 @@ num_threads = 3
 
 train_capacity = min_after_dequeue_train + num_threads * train_batch
 test_capacity = min_after_dequeue_test + num_threads * test_batch
-
-Training_iterations = 7500
+Training_iterations = 3000
 Validation_size = 100
 
 test_count = labels_type * 100
@@ -111,35 +111,7 @@ test_x_batch, test_y_batch = tf.train.shuffle_batch([x_val, y_val],
                                                     min_after_dequeue=min_after_dequeue_test)
 
 
-def plot_confusion_matrix(cls_pred, cls_true):
-    # This is called from print_test_accuracy() below.
 
-    # cls_pred is an array of the predicted class-number for
-    # all images in the test-set.
-
-    # Get the true classifications for the test-set.
-
-    # Get the confusion matrix using sklearn.
-    cm = confusion_matrix(y_true=cls_true,
-                          y_pred=cls_pred)
-
-    # Print the confusion matrix as text.
-    print(cm)
-
-    # Plot the confusion matrix as an image.
-    plt.matshow(cm)
-
-    # Make various adjustments to the plot.
-    plt.colorbar()
-    tick_marks = np.arange(labels_type)
-    plt.xticks(tick_marks, range(labels_type))
-    plt.yticks(tick_marks, range(labels_type))
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-
-    # Ensure the plot is shown correctly with multiple plots
-    # in a single Notebook cell.
-    plt.show()
 
 
 # Train
@@ -177,6 +149,6 @@ with tf.Session() as sess:
     # with tf.gfile.FastGFile('gesture_cnn.pb', mode = 'wb') as f:
     #     f.write(output_graph_def.SerializeToString())
     constant_graph = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def, ["output"])
-    with tf.gfile.FastGFile('../Model/gesture_cnn.pb', mode='wb') as f:
+    with tf.gfile.FastGFile('../Model/gesture_cnn256.pb', mode='wb') as f:
         f.write(constant_graph.SerializeToString())
 
