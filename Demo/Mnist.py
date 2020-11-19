@@ -83,8 +83,8 @@ y = tf.nn.softmax(tf.matmul(h_fc1,w_fc2)+b_fc1)
 
 
 # Loss
-cross_entropy = -tf.reduce_sum(y_label * tf.log(y))
-
+# cross_entropy = -tf.reduce_sum(y_label * tf.log(y))
+cross_entropy = -tf.reduce_sum(y_label * tf.log(y + 1e-7))
 
 train = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
